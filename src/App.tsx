@@ -127,7 +127,7 @@ function App() {
     (person) => person.name === selectedPersonName
   );
 
-    const selectedPersonRecords = useMemo(() => {
+  const selectedPersonRecords = useMemo(() => {
     if (!selectedPerson) {
       return [];
     }
@@ -164,6 +164,24 @@ function App() {
     record.people.includes("Podo")
   ).length;
 
+    const renderPersonButtons = (names: string[]) => {
+    return names.map((name, index) => (
+      <span key={name}>
+        <button
+          type="button"
+          className="inline-person-button"
+          onClick={() => {
+            setSelectedPersonName(name);
+            setSourceFilter("all");
+          }}
+        >
+          {name}
+        </button>
+        {index < names.length - 1 ? ", " : ""}
+      </span>
+    ));
+  };
+
   if (loading) {
     return <div className="page-state">Loading Jotform data...</div>;
   }
@@ -199,85 +217,85 @@ function App() {
       </header>
 
       <section className="summary-grid">
-  <article className="summary-card">
-    <span>Total Records</span>
-    <strong>{totalRecords}</strong>
-  </article>
+        <article className="summary-card">
+          <span>Total Records</span>
+          <strong>{totalRecords}</strong>
+        </article>
 
-  <article className="summary-card">
-    <span>People Involved</span>
-    <strong>{totalPeople}</strong>
-  </article>
+        <article className="summary-card">
+          <span>People Involved</span>
+          <strong>{totalPeople}</strong>
+        </article>
 
-  <article className="summary-card">
-    <span>Podo-Linked Records</span>
-    <strong>{podoRecords}</strong>
-  </article>
+        <article className="summary-card">
+          <span>Podo-Linked Records</span>
+          <strong>{podoRecords}</strong>
+        </article>
 
-  <article className="summary-card">
-    <span>Sources Covered</span>
-    <strong>5</strong>
-  </article>
-</section>
+        <article className="summary-card">
+          <span>Sources Covered</span>
+          <strong>5</strong>
+        </article>
+      </section>
 
-<section className="case-grid">
-  <article className="panel">
-    <div className="panel-header">
-      <div>
-        <h2>Podo Trail</h2>
-        <p className="subtle">Latest known clue based on all linked records</p>
-      </div>
-    </div>
-
-    <div className="case-details">
-      <div>
-        <span className="case-label">Last known location</span>
-        <strong>{lastPodoRecord?.location || "-"}</strong>
-      </div>
-
-      <div>
-        <span className="case-label">Last known timestamp</span>
-        <strong>{lastPodoRecord?.timestamp || "-"}</strong>
-      </div>
-
-      <div>
-        <span className="case-label">Last seen with</span>
-        <strong>{getLastSeenWith(lastPodoRecord)}</strong>
-      </div>
-
-      <div>
-        <span className="case-label">Latest source</span>
-        <strong>{lastPodoRecord ? sourceLabel(lastPodoRecord.source) : "-"}</strong>
-      </div>
-    </div>
-  </article>
-
-  <article className="panel">
-    <div className="panel-header">
-      <div>
-        <h2>Suspicious People</h2>
-        <p className="subtle">Simple clue-based ranking from linked records</p>
-      </div>
-    </div>
-
-    <div className="suspicious-list">
-      {suspiciousPeople.map((person) => (
-        <button
-          key={person.name}
-          className="suspicious-item"
-          onClick={() => setSelectedPersonName(person.name)}
-        >
-          <div>
-            <strong>{person.name}</strong>
-            <p>{person.recordCount} linked records</p>
+      <section className="case-grid">
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>Podo Trail</h2>
+              <p className="subtle">Latest known clue based on all linked records</p>
+            </div>
           </div>
 
-          <span className="suspicious-score">{person.score}</span>
-        </button>
-      ))}
-    </div>
-  </article>
-</section>
+          <div className="case-details">
+            <div>
+              <span className="case-label">Last known location</span>
+              <strong>{lastPodoRecord?.location || "-"}</strong>
+            </div>
+
+            <div>
+              <span className="case-label">Last known timestamp</span>
+              <strong>{lastPodoRecord?.timestamp || "-"}</strong>
+            </div>
+
+            <div>
+              <span className="case-label">Last seen with</span>
+              <strong>{getLastSeenWith(lastPodoRecord)}</strong>
+            </div>
+
+            <div>
+              <span className="case-label">Latest source</span>
+              <strong>{lastPodoRecord ? sourceLabel(lastPodoRecord.source) : "-"}</strong>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel">
+          <div className="panel-header">
+            <div>
+              <h2>Suspicious People</h2>
+              <p className="subtle">Simple clue-based ranking from linked records</p>
+            </div>
+          </div>
+
+          <div className="suspicious-list">
+            {suspiciousPeople.map((person) => (
+              <button
+                key={person.name}
+                className="suspicious-item"
+                onClick={() => setSelectedPersonName(person.name)}
+              >
+                <div>
+                  <strong>{person.name}</strong>
+                  <p>{person.recordCount} linked records</p>
+                </div>
+
+                <span className="suspicious-score">{person.score}</span>
+              </button>
+            ))}
+          </div>
+        </article>
+      </section>
 
       <main className="layout">
         <aside className="panel people-panel">
@@ -316,132 +334,132 @@ function App() {
         </aside>
 
         <section className="panel detail-panel">
-  {!selectedPerson ? (
-    <div className="empty-state">Select a person to inspect details.</div>
-  ) : (
-    <>
-      <div className="panel-header">
-        <div>
-          <h2>{selectedPerson.name}</h2>
-          <p className="subtle">
-            {selectedPerson.recordCount} linked records across{" "}
-            {selectedPerson.sourceCount} sources
-          </p>
-        </div>
-      </div>
-
-      <div className="filter-row">
-        <button
-          className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("all")}
-        >
-          All
-        </button>
-
-        <button
-          className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("checkin")}
-        >
-          Checkins
-        </button>
-
-        <button
-          className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("message")}
-        >
-          Messages
-        </button>
-
-        <button
-          className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("sighting")}
-        >
-          Sightings
-        </button>
-
-        <button
-          className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("personalNote")}
-        >
-          Notes
-        </button>
-
-        <button
-          className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
-          onClick={() => setSourceFilter("anonymousTip")}
-        >
-          Tips
-        </button>
-      </div>
-
-      <div className="records-list">
-        {selectedPersonRecords.map((record) => {
-          const otherPeople = record.people.filter(
-            (person) => person !== selectedPerson.name
-          );
-
-          return (
-            <article key={`${record.source}-${record.id}`} className="record-card">
-              <div className="record-card-top">
-                <span className={`badge badge-${record.source}`}>
-                  {sourceLabel(record.source)}
-                </span>
-                <span className="record-timestamp">{record.timestamp || "-"}</span>
+          {!selectedPerson ? (
+            <div className="empty-state">Select a person to inspect details.</div>
+          ) : (
+            <>
+              <div className="panel-header">
+                <div>
+                  <h2>{selectedPerson.name}</h2>
+                  <p className="subtle">
+                    {selectedPerson.recordCount} linked records across{" "}
+                    {selectedPerson.sourceCount} sources
+                  </p>
+                </div>
               </div>
 
-              <h3>{record.location || "Unknown location"}</h3>
+              <div className="filter-row">
+                <button
+                  className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("all")}
+                >
+                  All
+                </button>
 
-              <p className="record-content">{record.content || "No content."}</p>
+                <button
+                  className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("checkin")}
+                >
+                  Checkins
+                </button>
 
-              <div className="record-meta">
-                <span>
-                  <strong>People:</strong>{" "}
-                  {record.people.length ? record.people.join(", ") : "-"}
-                </span>
+                <button
+                  className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("message")}
+                >
+                  Messages
+                </button>
 
-                {otherPeople.length > 0 && (
-                  <span>
-                    <strong>Linked with:</strong> {otherPeople.join(", ")}
-                  </span>
-                )}
+                <button
+                  className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("sighting")}
+                >
+                  Sightings
+                </button>
 
-                {record.metadata.urgency && (
-                  <span>
-                    <strong>Urgency:</strong> {record.metadata.urgency}
-                  </span>
-                )}
+                <button
+                  className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("personalNote")}
+                >
+                  Notes
+                </button>
 
-                {record.metadata.confidence && (
-                  <span>
-                    <strong>Confidence:</strong> {record.metadata.confidence}
-                  </span>
-                )}
-
-                {record.metadata.recipientName && (
-                  <span>
-                    <strong>Recipient:</strong> {record.metadata.recipientName}
-                  </span>
-                )}
-
-                {record.metadata.seenWith && (
-                  <span>
-                    <strong>Seen with:</strong> {record.metadata.seenWith}
-                  </span>
-                )}
-
-                {record.coordinates && (
-                  <span>
-                    <strong>Coordinates:</strong> {record.coordinates}
-                  </span>
-                )}
+                <button
+                  className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
+                  onClick={() => setSourceFilter("anonymousTip")}
+                >
+                  Tips
+                </button>
               </div>
-            </article>
-          );
-        })}
-      </div>
-    </>
-  )}
-</section>
+
+              <div className="records-list">
+                {selectedPersonRecords.map((record) => {
+                  const otherPeople = record.people.filter(
+                    (person) => person !== selectedPerson.name
+                  );
+
+                  return (
+                    <article key={`${record.source}-${record.id}`} className="record-card">
+                      <div className="record-card-top">
+                        <span className={`badge badge-${record.source}`}>
+                          {sourceLabel(record.source)}
+                        </span>
+                        <span className="record-timestamp">{record.timestamp || "-"}</span>
+                      </div>
+
+                      <h3>{record.location || "Unknown location"}</h3>
+
+                      <p className="record-content">{record.content || "No content."}</p>
+
+                      <div className="record-meta">
+                        <span>
+                          <strong>People:</strong>{" "}
+                          {record.people.length ? renderPersonButtons(record.people) : "-"}
+                        </span>
+
+                        {otherPeople.length > 0 && (
+                          <span>
+                            <strong>Linked with:</strong> {renderPersonButtons(otherPeople)}
+                          </span>
+                        )}
+
+                        {record.metadata.urgency && (
+                          <span>
+                            <strong>Urgency:</strong> {record.metadata.urgency}
+                          </span>
+                        )}
+
+                        {record.metadata.confidence && (
+                          <span>
+                            <strong>Confidence:</strong> {record.metadata.confidence}
+                          </span>
+                        )}
+
+                        {record.metadata.recipientName && (
+                          <span>
+                            <strong>Recipient:</strong> {record.metadata.recipientName}
+                          </span>
+                        )}
+
+                        {record.metadata.seenWith && (
+                          <span>
+                            <strong>Seen with:</strong> {record.metadata.seenWith}
+                          </span>
+                        )}
+
+                        {record.coordinates && (
+                          <span>
+                            <strong>Coordinates:</strong> {record.coordinates}
+                          </span>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </section>
       </main>
     </div>
   );
