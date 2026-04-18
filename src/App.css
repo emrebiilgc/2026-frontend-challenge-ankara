@@ -362,6 +362,29 @@ body {
 .inline-person-button:hover {
   text-decoration: underline;
 }
+.location-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.location-filter-label {
+  font-size: 14px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.location-select {
+  min-width: 220px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: white;
+  font: inherit;
+  color: #111827;
+}
 
 @media (max-width: 960px) {
   .case-grid {

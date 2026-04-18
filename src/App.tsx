@@ -67,7 +67,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [selectedPersonName, setSelectedPersonName] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"all" | NormalizedRecord["source"]>("all");
-
+const [locationFilter, setLocationFilter] = useState("all");
   useEffect(() => {
     async function load() {
       try {
@@ -127,17 +127,39 @@ function App() {
     (person) => person.name === selectedPersonName
   );
 
-  const selectedPersonRecords = useMemo(() => {
-    if (!selectedPerson) {
-      return [];
-    }
+const selectedPersonRecords = useMemo(() => {
+  if (!selectedPerson) {
+    return [];
+  }
 
-    if (sourceFilter === "all") {
-      return selectedPerson.records;
-    }
+  return selectedPerson.records.filter((record) => {
+    const matchesSource =
+      sourceFilter === "all" ? true : record.source === sourceFilter;
 
-    return selectedPerson.records.filter((record) => record.source === sourceFilter);
-  }, [selectedPerson, sourceFilter]);
+    const matchesLocation =
+      locationFilter === "all" ? true : record.location === locationFilter;
+
+    return matchesSource && matchesLocation;
+  });
+}, [selectedPerson, sourceFilter, locationFilter]);
+
+const selectedPersonLocations = useMemo(() => {
+  if (!selectedPerson) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      selectedPerson.records
+        .map((record) => record.location)
+        .filter((location) => location && location.trim() !== "")
+    )
+  ).sort((a, b) => a.localeCompare(b));
+}, [selectedPerson]);
+
+useEffect(() => {
+  setLocationFilter("all");
+}, [selectedPersonName]);
 
   const podoRecordsAll = useMemo(() => {
     return allRecords.filter((record) => record.people.includes("Podo"));
@@ -173,6 +195,7 @@ function App() {
           onClick={() => {
             setSelectedPersonName(name);
             setSourceFilter("all");
+  setLocationFilter("all");
           }}
         >
           {name}
@@ -283,7 +306,11 @@ function App() {
               <button
                 key={person.name}
                 className="suspicious-item"
-                onClick={() => setSelectedPersonName(person.name)}
+                onClick={() => {
+  setSelectedPersonName(person.name);
+  setSourceFilter("all");
+  setLocationFilter("all");
+}}
               >
                 <div>
                   <strong>{person.name}</strong>
@@ -391,7 +418,25 @@ function App() {
                   Tips
                 </button>
               </div>
+              <div className="location-filter-row">
+  <label htmlFor="location-filter" className="location-filter-label">
+    Location
+  </label>
 
+  <select
+    id="location-filter"
+    className="location-select"
+    value={locationFilter}
+    onChange={(event) => setLocationFilter(event.target.value)}
+  >
+    <option value="all">All locations</option>
+    {selectedPersonLocations.map((location) => (
+      <option key={location} value={location}>
+        {location}
+      </option>
+    ))}
+  </select>
+</div>
               <div className="records-list">
                 {selectedPersonRecords.map((record) => {
                   const otherPeople = record.people.filter(
