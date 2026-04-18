@@ -356,6 +356,22 @@ return (
       </aside>
 
       <section className="workspace-main">
+
+          <section className="panel workspace-search-panel">
+    <div className="workspace-search-row">
+      <input
+        className="workspace-search-input"
+        type="text"
+        placeholder="Search people, places, notes, timestamps..."
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+      />
+      <span className="workspace-search-count">
+        {filteredPeople.length} matches
+      </span>
+    </div>
+  </section>
+
         <section className="panel detail-panel">
           {!selectedPerson ? (
             <div className="empty-state">Select a person to inspect details.</div>
@@ -618,74 +634,64 @@ return (
           </div>
         </section>
 
-        <section className="panel trail-panel">
-          <div className="panel-header compact-header">
-            <div>
-              <h2>Podo Timeline</h2>
-              <p className="subtle">Recent linked events</p>
-            </div>
+<section className="panel trail-panel">
+  <div className="panel-header compact-header">
+    <div>
+      <h2>Podo Timeline</h2>
+      <p className="subtle">Recent linked events</p>
+    </div>
+  </div>
+
+  <div className="trail-list">
+    {podoTrailRecords.map((record) => {
+      const companions = getTrailCompanions(record);
+
+      return (
+        <article
+          key={`podo-trail-${record.source}-${record.id}`}
+          className="trail-item"
+        >
+          <div className="trail-item-header">
+            <span className={`badge badge-${record.source}`}>
+              {sourceLabel(record.source)}
+            </span>
+            <span className="trail-timestamp">{record.timestamp || "-"}</span>
           </div>
 
-          <div className="trail-list">
-            {podoTrailRecords.map((record) => {
-              const companions = getTrailCompanions(record);
+          <h3 className="trail-title">{record.location || "Unknown location"}</h3>
 
-              return (
-                <article
-                  key={`podo-trail-${record.source}-${record.id}`}
-                  className="trail-item"
-                >
-                  <div className="trail-item-left">
-                    <span className={`badge badge-${record.source}`}>
-                      {sourceLabel(record.source)}
-                    </span>
-                  </div>
+          <p className="trail-content">{record.content || "No content."}</p>
 
-                  <div className="trail-item-body">
-                    <div className="trail-item-top">
-                      <strong>{record.location || "Unknown location"}</strong>
-                      <span className="trail-timestamp">
-                        {record.timestamp || "-"}
-                      </span>
-                    </div>
+          <div className="trail-meta">
+            {companions.length > 0 && (
+              <span>
+                <strong>Linked with:</strong> {renderPersonButtons(companions)}
+              </span>
+            )}
 
-                    <p className="trail-content">
-                      {record.content || "No content."}
-                    </p>
+            {record.metadata.recipientName && (
+              <span>
+                <strong>Recipient:</strong> {record.metadata.recipientName}
+              </span>
+            )}
 
-                    <div className="trail-meta">
-                      {companions.length > 0 && (
-                        <span>
-                          <strong>Linked with:</strong>{" "}
-                          {renderPersonButtons(companions)}
-                        </span>
-                      )}
+            {record.metadata.seenWith && (
+              <span>
+                <strong>Seen with:</strong> {record.metadata.seenWith}
+              </span>
+            )}
 
-                      {record.metadata.recipientName && (
-                        <span>
-                          <strong>Recipient:</strong>{" "}
-                          {record.metadata.recipientName}
-                        </span>
-                      )}
-
-                      {record.metadata.seenWith && (
-                        <span>
-                          <strong>Seen with:</strong> {record.metadata.seenWith}
-                        </span>
-                      )}
-
-                      {record.metadata.confidence && (
-                        <span>
-                          <strong>Confidence:</strong> {record.metadata.confidence}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            {record.metadata.confidence && (
+              <span>
+                <strong>Confidence:</strong> {record.metadata.confidence}
+              </span>
+            )}
           </div>
-        </section>
+        </article>
+      );
+    })}
+  </div>
+</section>
       </aside>
     </div>
   </div>
