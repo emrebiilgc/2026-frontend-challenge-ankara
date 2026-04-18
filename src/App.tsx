@@ -174,18 +174,39 @@ useEffect(() => {
   return podoRecordsAll.slice(0, 6);
 }, [podoRecordsAll]);
 
-  const suspiciousPeople = useMemo(() => {
-    return people
-      .filter((person) => person.name !== "Podo")
-      .map((person) => ({
+const suspiciousPeople = useMemo(() => {
+  return people
+    .filter((person) => person.name !== "Podo")
+    .map((person) => {
+      const podoLinkedRecords = person.records.filter((record) =>
+        record.people.includes("Podo")
+      );
+
+      const sightingCount = person.records.filter(
+        (record) => record.source === "sighting"
+      ).length;
+
+      const tipCount = person.records.filter(
+        (record) => record.source === "anonymousTip"
+      ).length;
+
+      const lastLinkedRecord = sortRecordsByTimestamp(podoLinkedRecords)[0];
+
+      return {
         name: person.name,
         score: scorePerson(person.name, person.records),
         lastSeen: person.lastSeen,
         recordCount: person.recordCount,
-      }))
-      .sort((a, b) => b.score - a.score || b.recordCount - a.recordCount)
-      .slice(0, 5);
-  }, [people]);
+        podoLinkedCount: podoLinkedRecords.length,
+        sightingCount,
+        tipCount,
+        lastLinkedLocation: lastLinkedRecord?.location || "-",
+        lastLinkedTimestamp: lastLinkedRecord?.timestamp || "-",
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.recordCount - a.recordCount)
+    .slice(0, 5);
+}, [people]);
 
   const totalPeople = people.length;
   const totalRecords = allRecords.length;
@@ -308,26 +329,39 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="suspicious-list">
-            {suspiciousPeople.map((person) => (
-              <button
-                key={person.name}
-                className="suspicious-item"
-                onClick={() => {
-  setSelectedPersonName(person.name);
-  setSourceFilter("all");
-  setLocationFilter("all");
-}}
-              >
-                <div>
-                  <strong>{person.name}</strong>
-                  <p>{person.recordCount} linked records</p>
-                </div>
+<div className="suspicious-list">
+  {suspiciousPeople.map((person) => (
+    <button
+      key={person.name}
+      className="suspicious-item"
+      onClick={() => {
+        setSelectedPersonName(person.name);
+        setSourceFilter("all");
+        setLocationFilter("all");
+      }}
+    >
+      <div className="suspicious-item-body">
+        <div className="suspicious-item-top">
+          <strong>{person.name}</strong>
+          <p>{person.recordCount} linked records</p>
+        </div>
 
-                <span className="suspicious-score">{person.score}</span>
-              </button>
-            ))}
-          </div>
+        <div className="suspicious-reasons">
+          <span>Podo-linked: {person.podoLinkedCount}</span>
+          <span>Sightings: {person.sightingCount}</span>
+          <span>Tips: {person.tipCount}</span>
+        </div>
+
+        <div className="suspicious-last">
+          <span>Last linked place: {person.lastLinkedLocation}</span>
+          <span>Last linked time: {person.lastLinkedTimestamp}</span>
+        </div>
+      </div>
+
+      <span className="suspicious-score">{person.score}</span>
+    </button>
+  ))}
+</div>
         </article>
       </section>
             <section className="panel trail-panel">
