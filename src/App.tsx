@@ -46,7 +46,7 @@ function getLastSeenWith(record?: NormalizedRecord) {
 function sourceLabel(source: NormalizedRecord["source"]) {
   switch (source) {
     case "checkin":
-      return "Checkin";
+      return "Check-in";
     case "message":
       return "Message";
     case "sighting":
@@ -60,6 +60,38 @@ function sourceLabel(source: NormalizedRecord["source"]) {
   }
 }
 
+function sourceIcon(source: NormalizedRecord["source"]) {
+  switch (source) {
+    case "checkin":
+      return "✓";
+    case "message":
+      return "✉";
+    case "sighting":
+      return "●";
+    case "personalNote":
+      return "✎";
+    case "anonymousTip":
+      return "!";
+    default:
+      return "·";
+  }
+}
+
+function getScoreTier(score: number): "high" | "mid" | "low" {
+  if (score >= 12) return "high";
+  if (score >= 6) return "mid";
+  return "low";
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 function App() {
   const [data, setData] = useState<FormSubmissionsMap | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +100,7 @@ function App() {
   const [selectedPersonName, setSelectedPersonName] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"all" | NormalizedRecord["source"]>("all");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [showTimeline, setShowTimeline] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -128,21 +161,46 @@ function App() {
     (person) => person.name === selectedPersonName
   );
 
-  const selectedPersonRecords = useMemo(() => {
-    if (!selectedPerson) {
-      return [];
-    }
+  const recordMatchesSearch = (record: NormalizedRecord, query: string) => {
+  const normalizedQuery = query.trim().toLowerCase();
 
-    return selectedPerson.records.filter((record) => {
-      const matchesSource =
-        sourceFilter === "all" ? true : record.source === sourceFilter;
+  if (!normalizedQuery) {
+    return true;
+  }
 
-      const matchesLocation =
-        locationFilter === "all" ? true : record.location === locationFilter;
+  const fields = [
+    record.location,
+    record.timestamp,
+    record.content,
+    ...record.people,
+    ...Object.values(record.metadata),
+  ];
 
-      return matchesSource && matchesLocation;
-    });
-  }, [selectedPerson, sourceFilter, locationFilter]);
+  const haystack = fields
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(normalizedQuery);
+};
+
+const selectedPersonRecords = useMemo(() => {
+  if (!selectedPerson) {
+    return [];
+  }
+
+  return selectedPerson.records.filter((record) => {
+    const matchesSource =
+      sourceFilter === "all" ? true : record.source === sourceFilter;
+
+    const matchesLocation =
+      locationFilter === "all" ? true : record.location === locationFilter;
+
+    const matchesSearch = recordMatchesSearch(record, search);
+
+    return matchesSource && matchesLocation && matchesSearch;
+  });
+}, [selectedPerson, sourceFilter, locationFilter, search]);
 
   const selectedPersonLocations = useMemo(() => {
     if (!selectedPerson) {
@@ -186,19 +244,32 @@ function App() {
       podoLinkedCount: podoLinkedRecords.length,
       lastLinkedLocation: lastLinkedRecord?.location || "-",
       lastLinkedTimestamp: lastLinkedRecord?.timestamp || "-",
-      topSource: topSourceEntry ? sourceLabel(topSourceEntry[0] as NormalizedRecord["source"]) : "-",
+      topSource: topSourceEntry
+        ? sourceLabel(topSourceEntry[0] as NormalizedRecord["source"])
+        : "-",
     };
   }, [selectedPerson]);
+
   useEffect(() => {
     setLocationFilter("all");
   }, [selectedPersonName]);
-
 
   const podoRecordsAll = useMemo(() => {
     return allRecords.filter((record) => record.people.includes("Podo"));
   }, [allRecords]);
 
   const lastPodoRecord = podoRecordsAll[0];
+
+  const TIMELINE_PREVIEW_COUNT = 1;
+
+const visiblePodoTimelineRecords = showTimeline
+  ? podoRecordsAll
+  : podoRecordsAll.slice(0, TIMELINE_PREVIEW_COUNT);
+
+const hiddenPodoTimelineCount = Math.max(
+  0,
+  podoRecordsAll.length - TIMELINE_PREVIEW_COUNT
+);
 
   const suspiciousPeople = useMemo(() => {
     return people
@@ -260,7 +331,7 @@ function App() {
   };
 
   if (loading) {
-    return <div className="page-state">Loading Jotform data...</div>;
+    return <div className="page-state">Loading case data…</div>;
   }
 
   if (error) {
@@ -283,7 +354,7 @@ function App() {
           <p className="eyebrow">Investigation Dashboard</p>
           <h1>Missing Podo: The Ankara Case</h1>
           <p className="subtle">
-            Track Podo’s movement, inspect linked people, and review suspicious clues.
+            Track Podo's movement, inspect linked people, and review suspicious clues.
           </p>
         </div>
 
@@ -311,10 +382,13 @@ function App() {
       </header>
 
       <div className="workspace">
+        {/* ── Sidebar: People ── */}
         <aside className="panel workspace-sidebar">
           <div className="panel-header compact-header">
-            <h2>People</h2>
-            <span>{filteredPeople.length} results</span>
+            <span className="panel-title">People</span>
+            <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+              {filteredPeople.length}
+            </span>
           </div>
 
           <div className="people-list">
@@ -332,14 +406,17 @@ function App() {
                   setLocationFilter("all");
                 }}
               >
-                <div className="person-card-top">
-                  <strong>{person.name}</strong>
-                  <span>{person.recordCount} records</span>
+                <div className="person-avatar">
+                  {getInitials(person.name)}
                 </div>
-
-                <div className="person-card-meta">
-                  <span>{person.sourceCount} sources</span>
-                  <span>Last seen: {person.lastSeen || "-"}</span>
+                <div className="person-info">
+                  <div className="person-card-top">
+                    <strong>{person.name}</strong>
+                  </div>
+                  <div className="person-card-meta">
+                    <span>{person.recordCount} records · {person.sourceCount} sources</span>
+                    <span>Last: {person.lastSeen || "-"}</span>
+                  </div>
                 </div>
               </button>
             ))}
@@ -350,14 +427,17 @@ function App() {
           </div>
         </aside>
 
+        {/* ── Main: Detail ── */}
         <section className="workspace-main">
-
           <section className="panel workspace-search-panel">
             <div className="workspace-search-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
               <input
                 className="workspace-search-input"
                 type="text"
-                placeholder="Search people, places, notes, timestamps..."
+                placeholder="Search people, places, notes…"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -374,7 +454,9 @@ function App() {
               <>
                 <div className="panel-header">
                   <div>
-                    <h2>{selectedPerson.name}</h2>
+                    <h2 style={{ fontSize: "16px", fontWeight: 600 }}>
+                      {selectedPerson.name}
+                    </h2>
                     <p className="subtle">
                       {selectedPerson.recordCount} linked records across{" "}
                       {selectedPerson.sourceCount} sources
@@ -385,20 +467,17 @@ function App() {
                 {selectedPersonInsight && (
                   <div className="person-insight-grid">
                     <div className="person-insight-card">
-                      <span>Podo-linked records</span>
+                      <span>Podo-linked</span>
                       <strong>{selectedPersonInsight.podoLinkedCount}</strong>
                     </div>
-
                     <div className="person-insight-card">
                       <span>Last linked location</span>
                       <strong>{selectedPersonInsight.lastLinkedLocation}</strong>
                     </div>
-
                     <div className="person-insight-card">
-                      <span>Last linked timestamp</span>
+                      <span>Last linked time</span>
                       <strong>{selectedPersonInsight.lastLinkedTimestamp}</strong>
                     </div>
-
                     <div className="person-insight-card">
                       <span>Top source</span>
                       <strong>{selectedPersonInsight.topSource}</strong>
@@ -408,54 +487,30 @@ function App() {
 
                 <div className="filter-bar filter-toolbar">
                   <div className="filter-row">
-                    <button
-                      className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("all")}
-                    >
-                      All
-                    </button>
-
-                    <button
-                      className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("checkin")}
-                    >
-                      Checkins
-                    </button>
-
-                    <button
-                      className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("message")}
-                    >
-                      Messages
-                    </button>
-
-                    <button
-                      className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("sighting")}
-                    >
-                      Sightings
-                    </button>
-
-                    <button
-                      className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("personalNote")}
-                    >
-                      Notes
-                    </button>
-
-                    <button
-                      className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
-                      onClick={() => setSourceFilter("anonymousTip")}
-                    >
-                      Tips
-                    </button>
+                    {(
+                      [
+                        { value: "all", label: "All" },
+                        { value: "checkin", label: "Check-ins" },
+                        { value: "message", label: "Messages" },
+                        { value: "sighting", label: "Sightings" },
+                        { value: "personalNote", label: "Notes" },
+                        { value: "anonymousTip", label: "Tips" },
+                      ] as const
+                    ).map(({ value, label }) => (
+                      <button
+                        key={value}
+                        className={sourceFilter === value ? "filter-chip active" : "filter-chip"}
+                        onClick={() => setSourceFilter(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="location-filter-inline">
                     <label htmlFor="location-filter" className="location-filter-label">
                       Location
                     </label>
-
                     <select
                       id="location-filter"
                       className="location-select"
@@ -485,6 +540,7 @@ function App() {
                         <article
                           key={`${record.source}-${record.id}`}
                           className="record-card"
+                          data-source={record.source}
                         >
                           <div className="record-card-top">
                             <span className={`badge badge-${record.source}`}>
@@ -557,31 +613,31 @@ function App() {
           </section>
         </section>
 
+        {/* ── Right Rail ── */}
         <aside className="workspace-rail">
+
+          {/* Podo Trail snapshot */}
           <section className="panel compact-case-panel">
             <div className="panel-header compact-header">
               <div>
-                <h2>Podo Trail</h2>
-                <p className="subtle">Latest case snapshot</p>
+                <span className="panel-title">Podo Trail</span>
+                <p className="subtle" style={{ marginTop: "3px" }}>Latest case snapshot</p>
               </div>
             </div>
 
-            <div className="case-details compact-case-details">
+            <div className="compact-case-details">
               <div>
                 <span className="case-label">Last known location</span>
                 <strong>{lastPodoRecord?.location || "-"}</strong>
               </div>
-
               <div>
-                <span className="case-label">Last known timestamp</span>
+                <span className="case-label">Last timestamp</span>
                 <strong>{lastPodoRecord?.timestamp || "-"}</strong>
               </div>
-
               <div>
                 <span className="case-label">Last seen with</span>
                 <strong>{getLastSeenWith(lastPodoRecord)}</strong>
               </div>
-
               <div>
                 <span className="case-label">Latest source</span>
                 <strong>
@@ -591,11 +647,83 @@ function App() {
             </div>
           </section>
 
+          {/* Podo Timeline */}
+          <section className="panel trail-panel">
+  <div className="panel-header">
+    <div className="trail-panel-title-group">
+      <span className="panel-title">Podo Timeline</span>
+      <p className="subtle" style={{ marginTop: "3px" }}>
+        {showTimeline
+          ? `${podoRecordsAll.length} events, newest first`
+          : `Showing ${Math.min(TIMELINE_PREVIEW_COUNT, podoRecordsAll.length)} of ${podoRecordsAll.length} events`}
+      </p>
+    </div>
+    <button
+      className="timeline-toggle-button"
+      style={{ flexShrink: 0 }}
+      onClick={() => setShowTimeline((v) => !v)}
+    >
+      {showTimeline ? "Show less ↑" : `Show all ${podoRecordsAll.length} ↓`}
+    </button>
+  </div>
+
+  <div className={`trail-list ${showTimeline ? "expanded" : "collapsed"}`}>
+    {visiblePodoTimelineRecords.map((record, index, arr) => (
+      <div
+        key={`${record.source}-${record.id}`}
+        className="trail-item"
+        style={index === arr.length - 1 ? { paddingBottom: 0 } : undefined}
+      >
+        <div className={`trail-dot trail-dot-${record.source}`}>
+          {sourceIcon(record.source)}
+        </div>
+        <div className="trail-body">
+          <div className="trail-item-header">
+            <strong className="trail-title">
+              {record.location || "Unknown location"}
+            </strong>
+            <span className="trail-timestamp">
+              {record.timestamp || "-"}
+            </span>
+          </div>
+          <p className="trail-content">
+            {record.content
+              ? record.content.slice(0, 80) +
+                (record.content.length > 80 ? "…" : "")
+              : "No details."}
+          </p>
+          {record.people.filter((p) => p !== "Podo").length > 0 && (
+            <div className="trail-meta">
+              <span>
+                With:{" "}
+                {record.people
+                  .filter((p) => p !== "Podo")
+                  .join(", ")}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+
+    {!showTimeline && hiddenPodoTimelineCount > 0 && (
+      <div className="timeline-more-hint">
+        + {hiddenPodoTimelineCount} more events
+      </div>
+    )}
+
+    {!podoRecordsAll.length && (
+      <div className="empty-state">No Podo-linked records found.</div>
+    )}
+  </div>
+</section>
+
+          {/* Suspicious People */}
           <section className="panel compact-suspicious-panel">
             <div className="panel-header compact-header">
               <div>
-                <h2>Suspicious People</h2>
-                <p className="subtle">Clue-based ranking</p>
+                <span className="panel-title">Suspicious People</span>
+                <p className="subtle" style={{ marginTop: "3px" }}>Clue-based ranking</p>
               </div>
             </div>
 
@@ -617,18 +745,22 @@ function App() {
                     </div>
 
                     <div className="suspicious-reasons">
-                      <span>Podo-linked: {person.podoLinkedCount}</span>
+                      <span>Podo: {person.podoLinkedCount}</span>
                       <span>Sightings: {person.sightingCount}</span>
                       <span>Tips: {person.tipCount}</span>
                     </div>
                   </div>
 
-                  <span className="suspicious-score">{person.score}</span>
+                  <span
+                    className="suspicious-score"
+                    data-tier={getScoreTier(person.score)}
+                  >
+                    {person.score}
+                  </span>
                 </button>
               ))}
             </div>
           </section>
-
         </aside>
       </div>
     </div>

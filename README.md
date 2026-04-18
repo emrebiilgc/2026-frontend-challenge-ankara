@@ -174,3 +174,4 @@ Due to the time-bounded nature of the challenge:
 ## Notes
 
 This project was developed as an individual challenge submission for the Jotform Frontend Challenge.
+    
