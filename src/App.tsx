@@ -59,6 +59,9 @@ function sourceLabel(source: NormalizedRecord["source"]) {
       return source;
   }
 }
+function getTrailCompanions(record: NormalizedRecord) {
+  return record.people.filter((person) => person !== "Podo");
+}
 
 function App() {
   const [data, setData] = useState<FormSubmissionsMap | null>(null);
@@ -166,6 +169,10 @@ useEffect(() => {
   }, [allRecords]);
 
   const lastPodoRecord = podoRecordsAll[0];
+
+  const podoTrailRecords = useMemo(() => {
+  return podoRecordsAll.slice(0, 6);
+}, [podoRecordsAll]);
 
   const suspiciousPeople = useMemo(() => {
     return people
@@ -323,7 +330,67 @@ useEffect(() => {
           </div>
         </article>
       </section>
+            <section className="panel trail-panel">
+  <div className="panel-header">
+    <div>
+      <h2>Podo Timeline</h2>
+      <p className="subtle">
+        Recent linked events showing Podo’s movement across people and places
+      </p>
+    </div>
+  </div>
 
+  <div className="trail-list">
+    {podoTrailRecords.map((record) => {
+      const companions = getTrailCompanions(record);
+
+      return (
+        <article key={`podo-trail-${record.source}-${record.id}`} className="trail-item">
+          <div className="trail-item-left">
+            <span className={`badge badge-${record.source}`}>
+              {sourceLabel(record.source)}
+            </span>
+          </div>
+
+          <div className="trail-item-body">
+            <div className="trail-item-top">
+              <strong>{record.location || "Unknown location"}</strong>
+              <span className="trail-timestamp">{record.timestamp || "-"}</span>
+            </div>
+
+            <p className="trail-content">{record.content || "No content."}</p>
+
+            <div className="trail-meta">
+              {companions.length > 0 && (
+                <span>
+                  <strong>Linked with:</strong> {renderPersonButtons(companions)}
+                </span>
+              )}
+
+              {record.metadata.recipientName && (
+                <span>
+                  <strong>Recipient:</strong> {record.metadata.recipientName}
+                </span>
+              )}
+
+              {record.metadata.seenWith && (
+                <span>
+                  <strong>Seen with:</strong> {record.metadata.seenWith}
+                </span>
+              )}
+
+              {record.metadata.confidence && (
+                <span>
+                  <strong>Confidence:</strong> {record.metadata.confidence}
+                </span>
+              )}
+            </div>
+          </div>
+        </article>
+      );
+    })}
+  </div>
+</section>
       <main className="layout">
         <aside className="panel people-panel">
           <div className="panel-header">
