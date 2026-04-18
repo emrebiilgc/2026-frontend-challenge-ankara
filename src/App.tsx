@@ -59,9 +59,6 @@ function sourceLabel(source: NormalizedRecord["source"]) {
       return source;
   }
 }
-function getTrailCompanions(record: NormalizedRecord) {
-  return record.people.filter((person) => person !== "Podo");
-}
 
 function App() {
   const [data, setData] = useState<FormSubmissionsMap | null>(null);
@@ -71,7 +68,7 @@ function App() {
   const [selectedPersonName, setSelectedPersonName] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"all" | NormalizedRecord["source"]>("all");
   const [locationFilter, setLocationFilter] = useState("all");
-  const [showPodoTimeline, setShowPodoTimeline] = useState(false);
+
   useEffect(() => {
     async function load() {
       try {
@@ -203,10 +200,6 @@ function App() {
 
   const lastPodoRecord = podoRecordsAll[0];
 
-  const podoTrailRecords = useMemo(() => {
-    return podoRecordsAll.slice(0, 6);
-  }, [podoRecordsAll]);
-
   const suspiciousPeople = useMemo(() => {
     return people
       .filter((person) => person.name !== "Podo")
@@ -283,363 +276,363 @@ function App() {
     return <div className="page-state">No data found.</div>;
   }
 
-return (
-  <div className="app-shell">
-    <header className="topbar">
-      <div className="topbar-copy">
-        <p className="eyebrow">Investigation Dashboard</p>
-        <h1>Missing Podo: The Ankara Case</h1>
-        <p className="subtle">
-          Track Podo’s movement, inspect linked people, and review suspicious clues.
-        </p>
-      </div>
-
-      <div className="topbar-stats">
-        <article className="mini-stat">
-          <span>Total Records</span>
-          <strong>{totalRecords}</strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>People</span>
-          <strong>{totalPeople}</strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>Podo-Linked</span>
-          <strong>{podoRecords}</strong>
-        </article>
-
-        <article className="mini-stat">
-          <span>Sources</span>
-          <strong>5</strong>
-        </article>
-      </div>
-    </header>
-
-    <div className="workspace">
-      <aside className="panel workspace-sidebar">
-        <div className="panel-header compact-header">
-          <h2>People</h2>
-          <span>{filteredPeople.length} results</span>
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="topbar-copy">
+          <p className="eyebrow">Investigation Dashboard</p>
+          <h1>Missing Podo: The Ankara Case</h1>
+          <p className="subtle">
+            Track Podo’s movement, inspect linked people, and review suspicious clues.
+          </p>
         </div>
 
-        <div className="people-list">
-          {filteredPeople.map((person) => (
-            <button
-              key={person.name}
-              className={
-                person.name === selectedPersonName
-                  ? "person-card active"
-                  : "person-card"
-              }
-              onClick={() => {
-                setSelectedPersonName(person.name);
-                setSourceFilter("all");
-                setLocationFilter("all");
-              }}
-            >
-              <div className="person-card-top">
-                <strong>{person.name}</strong>
-                <span>{person.recordCount} records</span>
-              </div>
+        <div className="topbar-stats">
+          <article className="mini-stat">
+            <span>Total Records</span>
+            <strong>{totalRecords}</strong>
+          </article>
 
-              <div className="person-card-meta">
-                <span>{person.sourceCount} sources</span>
-                <span>Last seen: {person.lastSeen || "-"}</span>
-              </div>
-            </button>
-          ))}
+          <article className="mini-stat">
+            <span>People</span>
+            <strong>{totalPeople}</strong>
+          </article>
 
-          {!filteredPeople.length && (
-            <div className="empty-state">No matching people found.</div>
-          )}
+          <article className="mini-stat">
+            <span>Podo-Linked</span>
+            <strong>{podoRecords}</strong>
+          </article>
+
+          <article className="mini-stat">
+            <span>Sources</span>
+            <strong>5</strong>
+          </article>
         </div>
-      </aside>
+      </header>
 
-      <section className="workspace-main">
-
-          <section className="panel workspace-search-panel">
-    <div className="workspace-search-row">
-      <input
-        className="workspace-search-input"
-        type="text"
-        placeholder="Search people, places, notes, timestamps..."
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-      />
-      <span className="workspace-search-count">
-        {filteredPeople.length} matches
-      </span>
-    </div>
-  </section>
-
-        <section className="panel detail-panel">
-          {!selectedPerson ? (
-            <div className="empty-state">Select a person to inspect details.</div>
-          ) : (
-            <>
-              <div className="panel-header">
-                <div>
-                  <h2>{selectedPerson.name}</h2>
-                  <p className="subtle">
-                    {selectedPerson.recordCount} linked records across{" "}
-                    {selectedPerson.sourceCount} sources
-                  </p>
-                </div>
-              </div>
-
-              {selectedPersonInsight && (
-                <div className="person-insight-grid">
-                  <div className="person-insight-card">
-                    <span>Podo-linked records</span>
-                    <strong>{selectedPersonInsight.podoLinkedCount}</strong>
-                  </div>
-
-                  <div className="person-insight-card">
-                    <span>Last linked location</span>
-                    <strong>{selectedPersonInsight.lastLinkedLocation}</strong>
-                  </div>
-
-                  <div className="person-insight-card">
-                    <span>Last linked timestamp</span>
-                    <strong>{selectedPersonInsight.lastLinkedTimestamp}</strong>
-                  </div>
-
-                  <div className="person-insight-card">
-                    <span>Top source</span>
-                    <strong>{selectedPersonInsight.topSource}</strong>
-                  </div>
-                </div>
-              )}
-
-<div className="filter-bar filter-toolbar">
-  <div className="filter-row">
-    <button
-      className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("all")}
-    >
-      All
-    </button>
-
-    <button
-      className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("checkin")}
-    >
-      Checkins
-    </button>
-
-    <button
-      className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("message")}
-    >
-      Messages
-    </button>
-
-    <button
-      className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("sighting")}
-    >
-      Sightings
-    </button>
-
-    <button
-      className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("personalNote")}
-    >
-      Notes
-    </button>
-
-    <button
-      className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
-      onClick={() => setSourceFilter("anonymousTip")}
-    >
-      Tips
-    </button>
-  </div>
-
-  <div className="location-filter-inline">
-    <label htmlFor="location-filter" className="location-filter-label">
-      Location
-    </label>
-
-    <select
-      id="location-filter"
-      className="location-select"
-      value={locationFilter}
-      onChange={(event) => setLocationFilter(event.target.value)}
-    >
-      <option value="all">All locations</option>
-      {selectedPersonLocations.map((location) => (
-        <option key={location} value={location}>
-          {location}
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
-
-              <div className="records-list">
-                {selectedPersonRecords.length === 0 ? (
-                  <div className="empty-state">No records match the current filters.</div>
-                ) : (
-                  selectedPersonRecords.map((record) => {
-                    const otherPeople = record.people.filter(
-                      (person) => person !== selectedPerson.name
-                    );
-
-                    return (
-                      <article
-                        key={`${record.source}-${record.id}`}
-                        className="record-card"
-                      >
-                        <div className="record-card-top">
-                          <span className={`badge badge-${record.source}`}>
-                            {sourceLabel(record.source)}
-                          </span>
-                          <span className="record-timestamp">
-                            {record.timestamp || "-"}
-                          </span>
-                        </div>
-
-                        <h3>{record.location || "Unknown location"}</h3>
-
-                        <p className="record-content">
-                          {record.content || "No content."}
-                        </p>
-
-                        <div className="record-meta">
-                          <span>
-                            <strong>People:</strong>{" "}
-                            {record.people.length
-                              ? renderPersonButtons(record.people)
-                              : "-"}
-                          </span>
-
-                          {otherPeople.length > 0 && (
-                            <span>
-                              <strong>Linked with:</strong>{" "}
-                              {renderPersonButtons(otherPeople)}
-                            </span>
-                          )}
-
-                          {record.metadata.urgency && (
-                            <span>
-                              <strong>Urgency:</strong> {record.metadata.urgency}
-                            </span>
-                          )}
-
-                          {record.metadata.confidence && (
-                            <span>
-                              <strong>Confidence:</strong> {record.metadata.confidence}
-                            </span>
-                          )}
-
-                          {record.metadata.recipientName && (
-                            <span>
-                              <strong>Recipient:</strong>{" "}
-                              {record.metadata.recipientName}
-                            </span>
-                          )}
-
-                          {record.metadata.seenWith && (
-                            <span>
-                              <strong>Seen with:</strong> {record.metadata.seenWith}
-                            </span>
-                          )}
-
-                          {record.coordinates && (
-                            <span>
-                              <strong>Coordinates:</strong> {record.coordinates}
-                            </span>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
-              </div>
-            </>
-          )}
-        </section>
-      </section>
-
-      <aside className="workspace-rail">
-        <section className="panel compact-case-panel">
+      <div className="workspace">
+        <aside className="panel workspace-sidebar">
           <div className="panel-header compact-header">
-            <div>
-              <h2>Podo Trail</h2>
-              <p className="subtle">Latest case snapshot</p>
-            </div>
+            <h2>People</h2>
+            <span>{filteredPeople.length} results</span>
           </div>
 
-          <div className="case-details compact-case-details">
-            <div>
-              <span className="case-label">Last known location</span>
-              <strong>{lastPodoRecord?.location || "-"}</strong>
-            </div>
-
-            <div>
-              <span className="case-label">Last known timestamp</span>
-              <strong>{lastPodoRecord?.timestamp || "-"}</strong>
-            </div>
-
-            <div>
-              <span className="case-label">Last seen with</span>
-              <strong>{getLastSeenWith(lastPodoRecord)}</strong>
-            </div>
-
-            <div>
-              <span className="case-label">Latest source</span>
-              <strong>
-                {lastPodoRecord ? sourceLabel(lastPodoRecord.source) : "-"}
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel compact-suspicious-panel">
-          <div className="panel-header compact-header">
-            <div>
-              <h2>Suspicious People</h2>
-              <p className="subtle">Clue-based ranking</p>
-            </div>
-          </div>
-
-          <div className="suspicious-list">
-            {suspiciousPeople.map((person) => (
+          <div className="people-list">
+            {filteredPeople.map((person) => (
               <button
                 key={person.name}
-                className="suspicious-item"
+                className={
+                  person.name === selectedPersonName
+                    ? "person-card active"
+                    : "person-card"
+                }
                 onClick={() => {
                   setSelectedPersonName(person.name);
                   setSourceFilter("all");
                   setLocationFilter("all");
                 }}
               >
-                <div className="suspicious-item-body">
-                  <div className="suspicious-item-top">
-                    <strong>{person.name}</strong>
-                    <p>{person.recordCount} linked records</p>
-                  </div>
+                <div className="person-card-top">
+                  <strong>{person.name}</strong>
+                  <span>{person.recordCount} records</span>
+                </div>
 
-                  <div className="suspicious-reasons">
-                    <span>Podo-linked: {person.podoLinkedCount}</span>
-                    <span>Sightings: {person.sightingCount}</span>
-                    <span>Tips: {person.tipCount}</span>
+                <div className="person-card-meta">
+                  <span>{person.sourceCount} sources</span>
+                  <span>Last seen: {person.lastSeen || "-"}</span>
+                </div>
+              </button>
+            ))}
+
+            {!filteredPeople.length && (
+              <div className="empty-state">No matching people found.</div>
+            )}
+          </div>
+        </aside>
+
+        <section className="workspace-main">
+
+          <section className="panel workspace-search-panel">
+            <div className="workspace-search-row">
+              <input
+                className="workspace-search-input"
+                type="text"
+                placeholder="Search people, places, notes, timestamps..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <span className="workspace-search-count">
+                {filteredPeople.length} matches
+              </span>
+            </div>
+          </section>
+
+          <section className="panel detail-panel">
+            {!selectedPerson ? (
+              <div className="empty-state">Select a person to inspect details.</div>
+            ) : (
+              <>
+                <div className="panel-header">
+                  <div>
+                    <h2>{selectedPerson.name}</h2>
+                    <p className="subtle">
+                      {selectedPerson.recordCount} linked records across{" "}
+                      {selectedPerson.sourceCount} sources
+                    </p>
                   </div>
                 </div>
 
-                <span className="suspicious-score">{person.score}</span>
-              </button>
-            ))}
-          </div>
+                {selectedPersonInsight && (
+                  <div className="person-insight-grid">
+                    <div className="person-insight-card">
+                      <span>Podo-linked records</span>
+                      <strong>{selectedPersonInsight.podoLinkedCount}</strong>
+                    </div>
+
+                    <div className="person-insight-card">
+                      <span>Last linked location</span>
+                      <strong>{selectedPersonInsight.lastLinkedLocation}</strong>
+                    </div>
+
+                    <div className="person-insight-card">
+                      <span>Last linked timestamp</span>
+                      <strong>{selectedPersonInsight.lastLinkedTimestamp}</strong>
+                    </div>
+
+                    <div className="person-insight-card">
+                      <span>Top source</span>
+                      <strong>{selectedPersonInsight.topSource}</strong>
+                    </div>
+                  </div>
+                )}
+
+                <div className="filter-bar filter-toolbar">
+                  <div className="filter-row">
+                    <button
+                      className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("all")}
+                    >
+                      All
+                    </button>
+
+                    <button
+                      className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("checkin")}
+                    >
+                      Checkins
+                    </button>
+
+                    <button
+                      className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("message")}
+                    >
+                      Messages
+                    </button>
+
+                    <button
+                      className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("sighting")}
+                    >
+                      Sightings
+                    </button>
+
+                    <button
+                      className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("personalNote")}
+                    >
+                      Notes
+                    </button>
+
+                    <button
+                      className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
+                      onClick={() => setSourceFilter("anonymousTip")}
+                    >
+                      Tips
+                    </button>
+                  </div>
+
+                  <div className="location-filter-inline">
+                    <label htmlFor="location-filter" className="location-filter-label">
+                      Location
+                    </label>
+
+                    <select
+                      id="location-filter"
+                      className="location-select"
+                      value={locationFilter}
+                      onChange={(event) => setLocationFilter(event.target.value)}
+                    >
+                      <option value="all">All locations</option>
+                      {selectedPersonLocations.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="records-list">
+                  {selectedPersonRecords.length === 0 ? (
+                    <div className="empty-state">No records match the current filters.</div>
+                  ) : (
+                    selectedPersonRecords.map((record) => {
+                      const otherPeople = record.people.filter(
+                        (person) => person !== selectedPerson.name
+                      );
+
+                      return (
+                        <article
+                          key={`${record.source}-${record.id}`}
+                          className="record-card"
+                        >
+                          <div className="record-card-top">
+                            <span className={`badge badge-${record.source}`}>
+                              {sourceLabel(record.source)}
+                            </span>
+                            <span className="record-timestamp">
+                              {record.timestamp || "-"}
+                            </span>
+                          </div>
+
+                          <h3>{record.location || "Unknown location"}</h3>
+
+                          <p className="record-content">
+                            {record.content || "No content."}
+                          </p>
+
+                          <div className="record-meta">
+                            <span>
+                              <strong>People:</strong>{" "}
+                              {record.people.length
+                                ? renderPersonButtons(record.people)
+                                : "-"}
+                            </span>
+
+                            {otherPeople.length > 0 && (
+                              <span>
+                                <strong>Linked with:</strong>{" "}
+                                {renderPersonButtons(otherPeople)}
+                              </span>
+                            )}
+
+                            {record.metadata.urgency && (
+                              <span>
+                                <strong>Urgency:</strong> {record.metadata.urgency}
+                              </span>
+                            )}
+
+                            {record.metadata.confidence && (
+                              <span>
+                                <strong>Confidence:</strong> {record.metadata.confidence}
+                              </span>
+                            )}
+
+                            {record.metadata.recipientName && (
+                              <span>
+                                <strong>Recipient:</strong>{" "}
+                                {record.metadata.recipientName}
+                              </span>
+                            )}
+
+                            {record.metadata.seenWith && (
+                              <span>
+                                <strong>Seen with:</strong> {record.metadata.seenWith}
+                              </span>
+                            )}
+
+                            {record.coordinates && (
+                              <span>
+                                <strong>Coordinates:</strong> {record.coordinates}
+                              </span>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
+          </section>
         </section>
 
-      </aside>
+        <aside className="workspace-rail">
+          <section className="panel compact-case-panel">
+            <div className="panel-header compact-header">
+              <div>
+                <h2>Podo Trail</h2>
+                <p className="subtle">Latest case snapshot</p>
+              </div>
+            </div>
+
+            <div className="case-details compact-case-details">
+              <div>
+                <span className="case-label">Last known location</span>
+                <strong>{lastPodoRecord?.location || "-"}</strong>
+              </div>
+
+              <div>
+                <span className="case-label">Last known timestamp</span>
+                <strong>{lastPodoRecord?.timestamp || "-"}</strong>
+              </div>
+
+              <div>
+                <span className="case-label">Last seen with</span>
+                <strong>{getLastSeenWith(lastPodoRecord)}</strong>
+              </div>
+
+              <div>
+                <span className="case-label">Latest source</span>
+                <strong>
+                  {lastPodoRecord ? sourceLabel(lastPodoRecord.source) : "-"}
+                </strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel compact-suspicious-panel">
+            <div className="panel-header compact-header">
+              <div>
+                <h2>Suspicious People</h2>
+                <p className="subtle">Clue-based ranking</p>
+              </div>
+            </div>
+
+            <div className="suspicious-list">
+              {suspiciousPeople.map((person) => (
+                <button
+                  key={person.name}
+                  className="suspicious-item"
+                  onClick={() => {
+                    setSelectedPersonName(person.name);
+                    setSourceFilter("all");
+                    setLocationFilter("all");
+                  }}
+                >
+                  <div className="suspicious-item-body">
+                    <div className="suspicious-item-top">
+                      <strong>{person.name}</strong>
+                      <p>{person.recordCount} linked records</p>
+                    </div>
+
+                    <div className="suspicious-reasons">
+                      <span>Podo-linked: {person.podoLinkedCount}</span>
+                      <span>Sightings: {person.sightingCount}</span>
+                      <span>Tips: {person.tipCount}</span>
+                    </div>
+                  </div>
+
+                  <span className="suspicious-score">{person.score}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+        </aside>
+      </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default App;
