@@ -71,6 +71,7 @@ function App() {
   const [selectedPersonName, setSelectedPersonName] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"all" | NormalizedRecord["source"]>("all");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [showPodoTimeline, setShowPodoTimeline] = useState(false);
   useEffect(() => {
     async function load() {
       try {
@@ -194,6 +195,7 @@ function App() {
   useEffect(() => {
     setLocationFilter("all");
   }, [selectedPersonName]);
+
 
   const podoRecordsAll = useMemo(() => {
     return allRecords.filter((record) => record.people.includes("Podo"));
@@ -411,71 +413,71 @@ return (
                 </div>
               )}
 
-              <div className="filter-bar">
-                <div className="filter-row">
-                  <button
-                    className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("all")}
-                  >
-                    All
-                  </button>
+<div className="filter-bar filter-toolbar">
+  <div className="filter-row">
+    <button
+      className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("all")}
+    >
+      All
+    </button>
 
-                  <button
-                    className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("checkin")}
-                  >
-                    Checkins
-                  </button>
+    <button
+      className={sourceFilter === "checkin" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("checkin")}
+    >
+      Checkins
+    </button>
 
-                  <button
-                    className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("message")}
-                  >
-                    Messages
-                  </button>
+    <button
+      className={sourceFilter === "message" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("message")}
+    >
+      Messages
+    </button>
 
-                  <button
-                    className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("sighting")}
-                  >
-                    Sightings
-                  </button>
+    <button
+      className={sourceFilter === "sighting" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("sighting")}
+    >
+      Sightings
+    </button>
 
-                  <button
-                    className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("personalNote")}
-                  >
-                    Notes
-                  </button>
+    <button
+      className={sourceFilter === "personalNote" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("personalNote")}
+    >
+      Notes
+    </button>
 
-                  <button
-                    className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
-                    onClick={() => setSourceFilter("anonymousTip")}
-                  >
-                    Tips
-                  </button>
-                </div>
+    <button
+      className={sourceFilter === "anonymousTip" ? "filter-chip active" : "filter-chip"}
+      onClick={() => setSourceFilter("anonymousTip")}
+    >
+      Tips
+    </button>
+  </div>
 
-                <div className="location-filter-row">
-                  <label htmlFor="location-filter" className="location-filter-label">
-                    Location
-                  </label>
+  <div className="location-filter-inline">
+    <label htmlFor="location-filter" className="location-filter-label">
+      Location
+    </label>
 
-                  <select
-                    id="location-filter"
-                    className="location-select"
-                    value={locationFilter}
-                    onChange={(event) => setLocationFilter(event.target.value)}
-                  >
-                    <option value="all">All locations</option>
-                    {selectedPersonLocations.map((location) => (
-                      <option key={location} value={location}>
-                        {location}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+    <select
+      id="location-filter"
+      className="location-select"
+      value={locationFilter}
+      onChange={(event) => setLocationFilter(event.target.value)}
+    >
+      <option value="all">All locations</option>
+      {selectedPersonLocations.map((location) => (
+        <option key={location} value={location}>
+          {location}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
               <div className="records-list">
                 {selectedPersonRecords.length === 0 ? (
@@ -634,64 +636,6 @@ return (
           </div>
         </section>
 
-<section className="panel trail-panel">
-  <div className="panel-header compact-header">
-    <div>
-      <h2>Podo Timeline</h2>
-      <p className="subtle">Recent linked events</p>
-    </div>
-  </div>
-
-  <div className="trail-list">
-    {podoTrailRecords.map((record) => {
-      const companions = getTrailCompanions(record);
-
-      return (
-        <article
-          key={`podo-trail-${record.source}-${record.id}`}
-          className="trail-item"
-        >
-          <div className="trail-item-header">
-            <span className={`badge badge-${record.source}`}>
-              {sourceLabel(record.source)}
-            </span>
-            <span className="trail-timestamp">{record.timestamp || "-"}</span>
-          </div>
-
-          <h3 className="trail-title">{record.location || "Unknown location"}</h3>
-
-          <p className="trail-content">{record.content || "No content."}</p>
-
-          <div className="trail-meta">
-            {companions.length > 0 && (
-              <span>
-                <strong>Linked with:</strong> {renderPersonButtons(companions)}
-              </span>
-            )}
-
-            {record.metadata.recipientName && (
-              <span>
-                <strong>Recipient:</strong> {record.metadata.recipientName}
-              </span>
-            )}
-
-            {record.metadata.seenWith && (
-              <span>
-                <strong>Seen with:</strong> {record.metadata.seenWith}
-              </span>
-            )}
-
-            {record.metadata.confidence && (
-              <span>
-                <strong>Confidence:</strong> {record.metadata.confidence}
-              </span>
-            )}
-          </div>
-        </article>
-      );
-    })}
-  </div>
-</section>
       </aside>
     </div>
   </div>
