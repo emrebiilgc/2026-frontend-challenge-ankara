@@ -31,3 +31,31 @@ export type FormSubmissionsMap = {
   personalNotes: JotformSubmission[];
   anonymousTips: JotformSubmission[];
 };
+
+export type SourceType =
+  | "checkin"
+  | "message"
+  | "sighting"
+  | "personalNote"
+  | "anonymousTip";
+
+export type NormalizedRecord = {
+  id: string;
+  source: SourceType;
+  timestamp: string;
+  location: string;
+  coordinates: string;
+  people: string[];
+  primaryPerson?: string;
+  content: string;
+  metadata: Record<string, string>;
+  raw: JotformSubmission;
+};
+
+export type PersonSummary = {
+  name: string;
+  records: NormalizedRecord[];
+  recordCount: number;
+  sourceCount: number;
+  lastSeen: string;
+};
