@@ -70,7 +70,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [selectedPersonName, setSelectedPersonName] = useState("");
   const [sourceFilter, setSourceFilter] = useState<"all" | NormalizedRecord["source"]>("all");
-const [locationFilter, setLocationFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   useEffect(() => {
     async function load() {
       try {
@@ -130,39 +130,70 @@ const [locationFilter, setLocationFilter] = useState("all");
     (person) => person.name === selectedPersonName
   );
 
-const selectedPersonRecords = useMemo(() => {
-  if (!selectedPerson) {
-    return [];
-  }
+  const selectedPersonRecords = useMemo(() => {
+    if (!selectedPerson) {
+      return [];
+    }
 
-  return selectedPerson.records.filter((record) => {
-    const matchesSource =
-      sourceFilter === "all" ? true : record.source === sourceFilter;
+    return selectedPerson.records.filter((record) => {
+      const matchesSource =
+        sourceFilter === "all" ? true : record.source === sourceFilter;
 
-    const matchesLocation =
-      locationFilter === "all" ? true : record.location === locationFilter;
+      const matchesLocation =
+        locationFilter === "all" ? true : record.location === locationFilter;
 
-    return matchesSource && matchesLocation;
-  });
-}, [selectedPerson, sourceFilter, locationFilter]);
+      return matchesSource && matchesLocation;
+    });
+  }, [selectedPerson, sourceFilter, locationFilter]);
 
-const selectedPersonLocations = useMemo(() => {
-  if (!selectedPerson) {
-    return [];
-  }
+  const selectedPersonLocations = useMemo(() => {
+    if (!selectedPerson) {
+      return [];
+    }
 
-  return Array.from(
-    new Set(
-      selectedPerson.records
-        .map((record) => record.location)
-        .filter((location) => location && location.trim() !== "")
-    )
-  ).sort((a, b) => a.localeCompare(b));
-}, [selectedPerson]);
+    return Array.from(
+      new Set(
+        selectedPerson.records
+          .map((record) => record.location)
+          .filter((location) => location && location.trim() !== "")
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [selectedPerson]);
 
-useEffect(() => {
-  setLocationFilter("all");
-}, [selectedPersonName]);
+  const selectedPersonInsight = useMemo(() => {
+    if (!selectedPerson) {
+      return null;
+    }
+
+    const podoLinkedRecords = selectedPerson.records.filter((record) =>
+      record.people.includes("Podo")
+    );
+
+    const sortedPodoLinked = sortRecordsByTimestamp(podoLinkedRecords);
+    const lastLinkedRecord = sortedPodoLinked[0];
+
+    const sourceCounts = selectedPerson.records.reduce<Record<string, number>>(
+      (acc, record) => {
+        acc[record.source] = (acc[record.source] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    const topSourceEntry = Object.entries(sourceCounts).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    return {
+      podoLinkedCount: podoLinkedRecords.length,
+      lastLinkedLocation: lastLinkedRecord?.location || "-",
+      lastLinkedTimestamp: lastLinkedRecord?.timestamp || "-",
+      topSource: topSourceEntry ? sourceLabel(topSourceEntry[0] as NormalizedRecord["source"]) : "-",
+    };
+  }, [selectedPerson]);
+  useEffect(() => {
+    setLocationFilter("all");
+  }, [selectedPersonName]);
 
   const podoRecordsAll = useMemo(() => {
     return allRecords.filter((record) => record.people.includes("Podo"));
@@ -171,42 +202,42 @@ useEffect(() => {
   const lastPodoRecord = podoRecordsAll[0];
 
   const podoTrailRecords = useMemo(() => {
-  return podoRecordsAll.slice(0, 6);
-}, [podoRecordsAll]);
+    return podoRecordsAll.slice(0, 6);
+  }, [podoRecordsAll]);
 
-const suspiciousPeople = useMemo(() => {
-  return people
-    .filter((person) => person.name !== "Podo")
-    .map((person) => {
-      const podoLinkedRecords = person.records.filter((record) =>
-        record.people.includes("Podo")
-      );
+  const suspiciousPeople = useMemo(() => {
+    return people
+      .filter((person) => person.name !== "Podo")
+      .map((person) => {
+        const podoLinkedRecords = person.records.filter((record) =>
+          record.people.includes("Podo")
+        );
 
-      const sightingCount = person.records.filter(
-        (record) => record.source === "sighting"
-      ).length;
+        const sightingCount = person.records.filter(
+          (record) => record.source === "sighting"
+        ).length;
 
-      const tipCount = person.records.filter(
-        (record) => record.source === "anonymousTip"
-      ).length;
+        const tipCount = person.records.filter(
+          (record) => record.source === "anonymousTip"
+        ).length;
 
-      const lastLinkedRecord = sortRecordsByTimestamp(podoLinkedRecords)[0];
+        const lastLinkedRecord = sortRecordsByTimestamp(podoLinkedRecords)[0];
 
-      return {
-        name: person.name,
-        score: scorePerson(person.name, person.records),
-        lastSeen: person.lastSeen,
-        recordCount: person.recordCount,
-        podoLinkedCount: podoLinkedRecords.length,
-        sightingCount,
-        tipCount,
-        lastLinkedLocation: lastLinkedRecord?.location || "-",
-        lastLinkedTimestamp: lastLinkedRecord?.timestamp || "-",
-      };
-    })
-    .sort((a, b) => b.score - a.score || b.recordCount - a.recordCount)
-    .slice(0, 5);
-}, [people]);
+        return {
+          name: person.name,
+          score: scorePerson(person.name, person.records),
+          lastSeen: person.lastSeen,
+          recordCount: person.recordCount,
+          podoLinkedCount: podoLinkedRecords.length,
+          sightingCount,
+          tipCount,
+          lastLinkedLocation: lastLinkedRecord?.location || "-",
+          lastLinkedTimestamp: lastLinkedRecord?.timestamp || "-",
+        };
+      })
+      .sort((a, b) => b.score - a.score || b.recordCount - a.recordCount)
+      .slice(0, 5);
+  }, [people]);
 
   const totalPeople = people.length;
   const totalRecords = allRecords.length;
@@ -214,7 +245,7 @@ const suspiciousPeople = useMemo(() => {
     record.people.includes("Podo")
   ).length;
 
-    const renderPersonButtons = (names: string[]) => {
+  const renderPersonButtons = (names: string[]) => {
     return names.map((name, index) => (
       <span key={name}>
         <button
@@ -223,7 +254,7 @@ const suspiciousPeople = useMemo(() => {
           onClick={() => {
             setSelectedPersonName(name);
             setSourceFilter("all");
-  setLocationFilter("all");
+            setLocationFilter("all");
           }}
         >
           {name}
@@ -329,102 +360,102 @@ const suspiciousPeople = useMemo(() => {
             </div>
           </div>
 
-<div className="suspicious-list">
-  {suspiciousPeople.map((person) => (
-    <button
-      key={person.name}
-      className="suspicious-item"
-      onClick={() => {
-        setSelectedPersonName(person.name);
-        setSourceFilter("all");
-        setLocationFilter("all");
-      }}
-    >
-      <div className="suspicious-item-body">
-        <div className="suspicious-item-top">
-          <strong>{person.name}</strong>
-          <p>{person.recordCount} linked records</p>
-        </div>
+          <div className="suspicious-list">
+            {suspiciousPeople.map((person) => (
+              <button
+                key={person.name}
+                className="suspicious-item"
+                onClick={() => {
+                  setSelectedPersonName(person.name);
+                  setSourceFilter("all");
+                  setLocationFilter("all");
+                }}
+              >
+                <div className="suspicious-item-body">
+                  <div className="suspicious-item-top">
+                    <strong>{person.name}</strong>
+                    <p>{person.recordCount} linked records</p>
+                  </div>
 
-        <div className="suspicious-reasons">
-          <span>Podo-linked: {person.podoLinkedCount}</span>
-          <span>Sightings: {person.sightingCount}</span>
-          <span>Tips: {person.tipCount}</span>
-        </div>
+                  <div className="suspicious-reasons">
+                    <span>Podo-linked: {person.podoLinkedCount}</span>
+                    <span>Sightings: {person.sightingCount}</span>
+                    <span>Tips: {person.tipCount}</span>
+                  </div>
 
-        <div className="suspicious-last">
-          <span>Last linked place: {person.lastLinkedLocation}</span>
-          <span>Last linked time: {person.lastLinkedTimestamp}</span>
-        </div>
-      </div>
+                  <div className="suspicious-last">
+                    <span>Last linked place: {person.lastLinkedLocation}</span>
+                    <span>Last linked time: {person.lastLinkedTimestamp}</span>
+                  </div>
+                </div>
 
-      <span className="suspicious-score">{person.score}</span>
-    </button>
-  ))}
-</div>
+                <span className="suspicious-score">{person.score}</span>
+              </button>
+            ))}
+          </div>
         </article>
       </section>
-            <section className="panel trail-panel">
-  <div className="panel-header">
-    <div>
-      <h2>Podo Timeline</h2>
-      <p className="subtle">
-        Recent linked events showing Podo’s movement across people and places
-      </p>
-    </div>
-  </div>
-
-  <div className="trail-list">
-    {podoTrailRecords.map((record) => {
-      const companions = getTrailCompanions(record);
-
-      return (
-        <article key={`podo-trail-${record.source}-${record.id}`} className="trail-item">
-          <div className="trail-item-left">
-            <span className={`badge badge-${record.source}`}>
-              {sourceLabel(record.source)}
-            </span>
+      <section className="panel trail-panel">
+        <div className="panel-header">
+          <div>
+            <h2>Podo Timeline</h2>
+            <p className="subtle">
+              Recent linked events showing Podo’s movement across people and places
+            </p>
           </div>
+        </div>
 
-          <div className="trail-item-body">
-            <div className="trail-item-top">
-              <strong>{record.location || "Unknown location"}</strong>
-              <span className="trail-timestamp">{record.timestamp || "-"}</span>
-            </div>
+        <div className="trail-list">
+          {podoTrailRecords.map((record) => {
+            const companions = getTrailCompanions(record);
 
-            <p className="trail-content">{record.content || "No content."}</p>
+            return (
+              <article key={`podo-trail-${record.source}-${record.id}`} className="trail-item">
+                <div className="trail-item-left">
+                  <span className={`badge badge-${record.source}`}>
+                    {sourceLabel(record.source)}
+                  </span>
+                </div>
 
-            <div className="trail-meta">
-              {companions.length > 0 && (
-                <span>
-                  <strong>Linked with:</strong> {renderPersonButtons(companions)}
-                </span>
-              )}
+                <div className="trail-item-body">
+                  <div className="trail-item-top">
+                    <strong>{record.location || "Unknown location"}</strong>
+                    <span className="trail-timestamp">{record.timestamp || "-"}</span>
+                  </div>
 
-              {record.metadata.recipientName && (
-                <span>
-                  <strong>Recipient:</strong> {record.metadata.recipientName}
-                </span>
-              )}
+                  <p className="trail-content">{record.content || "No content."}</p>
 
-              {record.metadata.seenWith && (
-                <span>
-                  <strong>Seen with:</strong> {record.metadata.seenWith}
-                </span>
-              )}
+                  <div className="trail-meta">
+                    {companions.length > 0 && (
+                      <span>
+                        <strong>Linked with:</strong> {renderPersonButtons(companions)}
+                      </span>
+                    )}
 
-              {record.metadata.confidence && (
-                <span>
-                  <strong>Confidence:</strong> {record.metadata.confidence}
-                </span>
-              )}
-            </div>
-          </div>
-        </article>
-      );
-    })}
-  </div>
-</section>
+                    {record.metadata.recipientName && (
+                      <span>
+                        <strong>Recipient:</strong> {record.metadata.recipientName}
+                      </span>
+                    )}
+
+                    {record.metadata.seenWith && (
+                      <span>
+                        <strong>Seen with:</strong> {record.metadata.seenWith}
+                      </span>
+                    )}
+
+                    {record.metadata.confidence && (
+                      <span>
+                        <strong>Confidence:</strong> {record.metadata.confidence}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
       <main className="layout">
         <aside className="panel people-panel">
           <div className="panel-header">
@@ -475,7 +506,29 @@ const suspiciousPeople = useMemo(() => {
                   </p>
                 </div>
               </div>
+              {selectedPersonInsight && (
+                <div className="person-insight-grid">
+                  <div className="person-insight-card">
+                    <span>Podo-linked records</span>
+                    <strong>{selectedPersonInsight.podoLinkedCount}</strong>
+                  </div>
 
+                  <div className="person-insight-card">
+                    <span>Last linked location</span>
+                    <strong>{selectedPersonInsight.lastLinkedLocation}</strong>
+                  </div>
+
+                  <div className="person-insight-card">
+                    <span>Last linked timestamp</span>
+                    <strong>{selectedPersonInsight.lastLinkedTimestamp}</strong>
+                  </div>
+
+                  <div className="person-insight-card">
+                    <span>Top source</span>
+                    <strong>{selectedPersonInsight.topSource}</strong>
+                  </div>
+                </div>
+              )}
               <div className="filter-row">
                 <button
                   className={sourceFilter === "all" ? "filter-chip active" : "filter-chip"}
@@ -520,24 +573,24 @@ const suspiciousPeople = useMemo(() => {
                 </button>
               </div>
               <div className="location-filter-row">
-  <label htmlFor="location-filter" className="location-filter-label">
-    Location
-  </label>
+                <label htmlFor="location-filter" className="location-filter-label">
+                  Location
+                </label>
 
-  <select
-    id="location-filter"
-    className="location-select"
-    value={locationFilter}
-    onChange={(event) => setLocationFilter(event.target.value)}
-  >
-    <option value="all">All locations</option>
-    {selectedPersonLocations.map((location) => (
-      <option key={location} value={location}>
-        {location}
-      </option>
-    ))}
-  </select>
-</div>
+                <select
+                  id="location-filter"
+                  className="location-select"
+                  value={locationFilter}
+                  onChange={(event) => setLocationFilter(event.target.value)}
+                >
+                  <option value="all">All locations</option>
+                  {selectedPersonLocations.map((location) => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="records-list">
                 {selectedPersonRecords.map((record) => {
                   const otherPeople = record.people.filter(
